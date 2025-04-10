@@ -9,19 +9,22 @@ from .openid_configuration import build_openid_configuration
 
 def build_metadata(cfgserv: ConfService):
     oidc_metadata = {
-        "credential_issuer": urlparse(cfgserv.service_url)._replace(path="/").geturl(),
-        "credential_endpoint": urljoin(cfgserv.service_url, "/credential"),
-        "batch_credential_endpoint": urljoin(cfgserv.service_url, "/batch_credential"),
-        "notification_endpoint": urljoin(cfgserv.service_url, "/notification"),
+        # This is hacky as hell, but wallet really does not do proper URL validation.
+        "credential_issuer": urlparse(cfgserv.service_url)
+        ._replace(path=urlparse(cfgserv.service_url).path.removesuffix("/"))
+        .geturl(),
+        "credential_endpoint": urljoin(cfgserv.service_url, "credential"),
+        "batch_credential_endpoint": urljoin(cfgserv.service_url, "batch_credential"),
+        "notification_endpoint": urljoin(cfgserv.service_url, "notification"),
         "deferred_credential_endpoint": urljoin(
-            cfgserv.service_url, "/deferred_credential"
+            cfgserv.service_url, "deferred_credential"
         ),
         "display": [
             {
                 "name": cfgserv.pid_organization_id,
                 "locale": "en",
                 "logo": {
-                    "uri": urljoin(cfgserv.service_url, "/ic-logo.png"),
+                    "uri": urljoin(cfgserv.service_url, "ic-logo.png"),
                     "alt_text": "EU Digital Identity Wallet Logo",
                 },
             }
@@ -29,15 +32,17 @@ def build_metadata(cfgserv: ConfService):
         "credential_configurations_supported": {},
     }
     oauth_metadata = {
-        "issuer": urlparse(cfgserv.service_url)._replace(path="/").geturl(),
-        "authorization_endpoint": urljoin(cfgserv.service_url, "/authorizationV3"),
-        "token_endpoint": urljoin(cfgserv.service_url, "/token"),
+        "issuer": urlparse(cfgserv.service_url)
+        ._replace(path=urlparse(cfgserv.service_url).path.removesuffix("/"))
+        .geturl(),
+        "authorization_endpoint": urljoin(cfgserv.service_url, "authorizationV3"),
+        "token_endpoint": urljoin(cfgserv.service_url, "token"),
         "token_endpoint_auth_methods_supported": ["public"],
         "token_endpoint_auth_signing_alg_values_supported": ["ES256"],
         "code_challenge_methods_supported": ["S256"],
-        "userinfo_endpoint": urljoin(cfgserv.service_url, "/userinfo"),
-        "jwks_uri": urljoin(cfgserv.service_url, "/static/jwks.json"),
-        "registration_endpoint": urljoin(cfgserv.service_url, "/registration"),
+        "userinfo_endpoint": urljoin(cfgserv.service_url, "userinfo"),
+        "jwks_uri": urljoin(cfgserv.service_url, "static/jwks.json"),
+        "registration_endpoint": urljoin(cfgserv.service_url, "registration"),
         "scopes_supported": ["openid"],
         "response_types_supported": ["code"],
     }

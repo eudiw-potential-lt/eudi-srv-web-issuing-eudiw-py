@@ -2,22 +2,45 @@ FROM python:3.12 AS build
 
 ENV DEBIAN_FRONTEND=noninteractive
 
-RUN mkdir -p /app
-
-COPY app/requirements.txt /requirements.txt
-
 WORKDIR /
 
 # TODO: oscrypto not detecting OpenSSL>3 git+https://github.com/wbond/oscrypto.git
-RUN python3 -m venv venv \ 
-    && /venv/bin/pip install \
-    --no-cache-dir -r requirements.txt
+#RUN python3 -m venv venv \ 
+#    && /venv/bin/pip install \
+#    --no-cache-dir -r requirements.txt
+# \
+#-I git+https://github.com/wbond/oscrypto.git
+
+COPY poetry.toml /poetry.toml
+COPY pyproject.toml /pyproject.toml
+COPY poetry.lock /poetry.lock
+
+RUN touch README.md \
+    && mkdir -p /app \
+    && touch /app/__init__.py \
+    && pip install poetry \
+    && poetry install --without dev
+
+#RUN python3 -m venv venv \ 
+#&& /venv/bin/pip install \
+#--no-cache-dir -r requirements.txt
 # \
 #-I git+https://github.com/wbond/oscrypto.git
 
 FROM python:3.12
 
 ENV BUILD_TAG 2025-09-17-01
+RUN mkdir -p /tmp/log_dev \
+    && chmod -R 755 /tmp/log_dev \
+    && mkdir -p /etc/eudiw/pid-issuer/cert \
+    && mkdir -p /etc/eudiw/pid-issuer/privkey
+
+COPY --from=build /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/ca-certificates.crt
+COPY --from=build /.venv /.venv
+COPY ./app /app
+
+WORKDIR /app
+
 ENV PORT=5000
 ENV HOST=0.0.0.0
 ENV EIDAS_NODE_URL="https://preprod.issuer.eudiw.dev/EidasNode/"
@@ -54,7 +77,7 @@ RUN mkdir -p /tmp/log_dev \
     && mkdir -p /etc/eudiw/pid-issuer/privkey
 
 COPY --from=build /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/ca-certificates.crt
-COPY --from=build /venv /venv
+COPY --from=build /.venv /.venv
 COPY ./app /app
 
 #ENV FLASK_APP=app \
@@ -66,4 +89,5 @@ COPY ./app /app
 
 #ENTRYPOINT [ "/venv/bin/flask" ]
 #CMD ["run", "--cert=/app/secrets/cert.pem", "--key=/app/secrets/key.pem"]
-CMD ["/venv/bin/flask", "--app", ".", "run"]
+CMD ["/.venv/bin/flask", "--app", ".", "run"]
+#CMD ["poetry",  "run",  "flask", "--app" "app" "run"]

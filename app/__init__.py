@@ -191,6 +191,9 @@ def create_app(test_config=None):
         app.wsgi_app, x_for=1, x_proto=1, x_host=1, x_port=1, x_prefix=1
     )
 
+    # add logging middleware
+    # app.wsgi_app = middleware(app.wsgi_app)
+
     app.register_error_handler(Exception, handle_exception)
     app.register_error_handler(404, page_not_found)
     log = logging.getLogger("werkzeug")

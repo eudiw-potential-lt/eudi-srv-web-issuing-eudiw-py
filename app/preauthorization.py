@@ -281,7 +281,7 @@ def preauth_form():
         "dynamic/form_authorize.html",
         presentation_data=presentation_data,
         user_id=user_id,
-        redirect_url=urljoin(cfgservice.service_url, "/form_authorize_generate"),
+        redirect_url=urljoin(cfgservice.service_url, "form_authorize_generate"),
     )
 
 

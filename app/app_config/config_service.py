@@ -29,6 +29,8 @@ from logging.handlers import TimedRotatingFileHandler
 import os
 from urllib.parse import urljoin
 
+import structlog
+
 
 class ConfService:
     # ------------------------------------------------------------------------------------------------
@@ -36,6 +38,8 @@ class ConfService:
     port = os.getenv("PORT", 5000)
     # service_url = "https://preprod.issuer.eudiw.dev:4443/"
     service_url = os.getenv("SERVICE_URL", "https://issuer.eudiw.dev/")
+    if not service_url.endswith("/"):
+        service_url = service_url + "/"
     # service_url = "https://127.0.0.1:5000/"
     # service_url = os.getenv("SERVICE_URL","https://dev.issuer.eudiw.dev/")
 
@@ -44,7 +48,7 @@ class ConfService:
     )
 
     revocation_service_url = os.getenv(
-        "REVOCATION_SERVICE_URL", urljoin(service_url, "/token_status_list/take")
+        "REVOCATION_SERVICE_URL", urljoin(service_url, "token_status_list/take")
     )
 
     # ---------------------------------------------------------------------------
@@ -62,7 +66,7 @@ class ConfService:
 
     # ------------------------------------------------------------------------------------------------
     # eIDAS Node base href (used in lightrequest)
-    eidasnode_url = os.getenv("EIDAS_NODE_URL", urljoin(service_url, "/EidasNode/"))
+    eidasnode_url = os.getenv("EIDAS_NODE_URL", urljoin(service_url, "EidasNode/"))
 
     # Number of Tries for login in eidas node
     eidasnode_retry = 3
@@ -137,7 +141,7 @@ class ConfService:
     qeaa_doctype = "eu.europa.ec.eudiw.qeaa.1"
 
     # OIDC4VC URL for initial page
-    oidc = urljoin(service_url, "/.well-known/openid-credential-issuer")
+    oidc = urljoin(service_url, ".well-known/openid-credential-issuer")
     # oidc = "https://preprod.issuer.eudiw.dev:4443/.well-known/openid-credential-issuer"
 
     # ------------------------------------------------------------------------------------------------
@@ -560,6 +564,20 @@ class ConfService:
         app_logger.addHandler(log_handler_info)
     else:
         logging.basicConfig()
+        structlog.configure(
+            processors=[
+                structlog.contextvars.merge_contextvars,
+                structlog.processors.add_log_level,
+                structlog.processors.StackInfoRenderer(),
+                structlog.dev.set_exc_info,
+                structlog.processors.TimeStamper(fmt="%Y-%m-%d %H:%M:%S", utc=False),
+                structlog.dev.ConsoleRenderer(),
+            ],
+            wrapper_class=structlog.make_filtering_bound_logger(logging.NOTSET),
+            context_class=dict,
+            logger_factory=structlog.PrintLoggerFactory(),
+            cache_logger_on_first_use=False,
+        )
         app_logger = logging.getLogger("app_logger")
 
     app_logger.setLevel(os.getenv("LOGGING_LEVEL", "INFO"))

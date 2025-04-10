@@ -281,7 +281,7 @@ def dynamic_R1(country: str):
         country_data = country_config["oidc_auth"]
 
         metadata_url = urljoin(
-            country_data["base_url"], "/.well-known/openid-configuration"
+            country_data["base_url"], ".well-known/openid-configuration"
         )
         metadata_json = requests.get(metadata_url).json()
 
@@ -513,7 +513,7 @@ def red():
         )
 
     metadata_url = urljoin(
-        country_config["oidc_auth"]["base_url"], "/.well-known/openid-configuration"
+        country_config["oidc_auth"]["base_url"], ".well-known/openid-configuration"
     )
     metadata_json = requests.get(metadata_url).json()
 

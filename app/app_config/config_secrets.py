@@ -29,4 +29,4 @@ flask_secret_key = os.getenv("FLASK_SECRET", "secret_here")
 #                                   entry key="lightToken.connector.request.secret"
 eidasnode_lightToken_secret = os.getenv("EIDASNODE_LIGHTTOKEN_SECRET", "secret_here")
 
-revocation_api_key = os.getenv("REVOCATION_API_KEY", "secret_here")
+revocation_api_key = os.getenv("REVOCATION_API_KEY", None)
