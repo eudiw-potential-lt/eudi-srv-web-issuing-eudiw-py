@@ -4,43 +4,21 @@ ENV DEBIAN_FRONTEND=noninteractive
 
 WORKDIR /
 
-# TODO: oscrypto not detecting OpenSSL>3 git+https://github.com/wbond/oscrypto.git
-#RUN python3 -m venv venv \ 
-#    && /venv/bin/pip install \
-#    --no-cache-dir -r requirements.txt
-# \
-#-I git+https://github.com/wbond/oscrypto.git
-
-COPY poetry.toml /poetry.toml
 COPY pyproject.toml /pyproject.toml
 COPY poetry.lock /poetry.lock
 
 RUN touch README.md \
     && mkdir -p /app \
     && touch /app/__init__.py \
+    && echo "[virtualenvs]" >> /poetry.toml \
+    && echo "create = true" >> /poetry.toml \
+    && echo "in-project = true" >> /poetry.toml \
     && pip install poetry \
     && poetry install --without dev
-
-#RUN python3 -m venv venv \ 
-#&& /venv/bin/pip install \
-#--no-cache-dir -r requirements.txt
-# \
-#-I git+https://github.com/wbond/oscrypto.git
 
 FROM python:3.12
 
 ENV BUILD_TAG 2025-09-17-01
-RUN mkdir -p /tmp/log_dev \
-    && chmod -R 755 /tmp/log_dev \
-    && mkdir -p /etc/eudiw/pid-issuer/cert \
-    && mkdir -p /etc/eudiw/pid-issuer/privkey
-
-COPY --from=build /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/ca-certificates.crt
-COPY --from=build /.venv /.venv
-COPY ./app /app
-
-WORKDIR /app
-
 ENV PORT=5000
 ENV HOST=0.0.0.0
 ENV EIDAS_NODE_URL="https://preprod.issuer.eudiw.dev/EidasNode/"
@@ -80,14 +58,4 @@ COPY --from=build /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/ca-certifica
 COPY --from=build /.venv /.venv
 COPY ./app /app
 
-#ENV FLASK_APP=app \
-#    FLASK_RUN_PORT=$PORT\
-#    FLASK_RUN_HOST=$HOST\
-#    SERVICE_URL="https://127.0.0.1:5000/" \
-#    EIDAS_NODE_URL="${EIDAS_NODE_URL}"
-#    DYNAMIC_PRESENTATION_URL="${DYNAMIC_PRESENTATION_URL}"
-
-#ENTRYPOINT [ "/venv/bin/flask" ]
-#CMD ["run", "--cert=/app/secrets/cert.pem", "--key=/app/secrets/key.pem"]
 CMD ["/.venv/bin/flask", "--app", ".", "run"]
-#CMD ["poetry",  "run",  "flask", "--app" "app" "run"]
