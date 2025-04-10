@@ -2,7 +2,7 @@ from urllib.parse import urlparse
 from .config_service import ConfService
 
 
-def build_oid_config(confsvc: ConfService):
+def build_oid_config(confsvc: type[ConfService]):
     parsed_url = urlparse(confsvc.service_url)
     subdomain = parsed_url.netloc
     port = confsvc.port

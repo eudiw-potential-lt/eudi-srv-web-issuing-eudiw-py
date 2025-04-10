@@ -16,40 +16,39 @@
 #
 ###############################################################################
 """
-The PID Issuer Web service is a component of the PID Provider backend. 
+The PID Issuer Web service is a component of the PID Provider backend.
 Its main goal is to issue the PID in cbor/mdoc (ISO 18013-5 mdoc) and SD-JWT format.
 
-This __init__.py serves double duty: it will contain the application factory, and it tells Python that the flask directory should be treated as a package.
+This __init__.py serves double duty: it will contain the application factory,
+and it tells Python that the flask directory should be treated as a package.
 """
 
+import logging
 import os
 import sys
-import logging
 
 sys.path.append(os.path.dirname(__file__))
 
-from flask import Flask, render_template, request, send_from_directory
-from flask_session import Session
-from flask_cors import CORS
-from werkzeug.debug import *
-from werkzeug.exceptions import HTTPException
-from idpyoidc.configure import Configuration
-from idpyoidc.configure import create_from_config_file
-from idpyoidc.server.configure import OPConfiguration
-from idpyoidc.server import Server
 from urllib.parse import urlparse
-from pycose.keys import EC2Key
 
-from cryptography.hazmat.backends import default_backend
-from cryptography import x509
 from app_config.config_service import ConfService as cfgserv
 from app_config.oid_config import build_oid_config
+from cryptography import x509
+from cryptography.hazmat.backends import default_backend
+from cryptography.hazmat.primitives.asymmetric import ec
+from flask import Flask, render_template, send_from_directory
+from flask_cors import CORS
+from flask_session import Session
+from idpyoidc.configure import Configuration
+from idpyoidc.server import Server
+from idpyoidc.server.configure import OPConfiguration
+from pycose.keys import EC2Key
 
-from .metadata_config import build_metadata
+# from werkzeug.debug import *
+from werkzeug.exceptions import HTTPException
 
 # Log
-from .app_config.config_service import ConfService as log
-
+from .metadata_config import build_metadata
 
 oidc_metadata = {}
 openid_metadata = {}
@@ -64,20 +63,21 @@ def setup_metadata():
 
     oidc_metadata, openid_metadata, oauth_metadata = build_metadata(cfgserv)
 
+
 def setup_trusted_CAs():
     global trusted_CAs
     logger = cfgserv.app_logger.getChild("trusted_ca_loader")
 
     ec_keys = {}
     for file in os.listdir(cfgserv.trusted_CAs_path):
-        if not file.endswith("pem"): continue
+        if not file.endswith("pem"):
+            continue
 
         try:
             CA_path = os.path.join(cfgserv.trusted_CAs_path, file)
 
             logger.debug(f"Loading CA: {CA_path}")
             with open(CA_path) as pem_file:
-
                 pem_data = pem_file.read()
 
                 pem_data = pem_data.encode()
@@ -87,6 +87,11 @@ def setup_trusted_CAs():
                 )
 
                 public_key = certificate.public_key()
+
+                if not isinstance(public_key, ec.EllipticCurvePublicKey):
+                    raise ValueError(
+                        f"CA certicate {CA_path} is not using elliptic curve"
+                    )
 
                 issuer = certificate.issuer
 
@@ -131,7 +136,8 @@ def setup_trusted_CAs():
 
     trusted_CAs = ec_keys
 
-def handle_exception(e):
+
+def handle_exception(e: Exception):
     # pass through HTTP errors
     if isinstance(e, HTTPException):
         return e
@@ -147,7 +153,7 @@ def handle_exception(e):
     )
 
 
-def page_not_found(e):
+def page_not_found(e: Exception):
     cfgserv.app_logger.exception("- WARN - Error 404", e)
     return (
         render_template(
@@ -168,7 +174,7 @@ def create_app(test_config=None):
 
     app.register_error_handler(Exception, handle_exception)
     app.register_error_handler(404, page_not_found)
-    log = logging.getLogger('werkzeug')
+    log = logging.getLogger("werkzeug")
     log.setLevel(logging.ERROR)
 
     @app.route("/", methods=["GET"])
@@ -184,7 +190,7 @@ def create_app(test_config=None):
     @app.route("/ic-logo.png")
     def logo():
         return send_from_directory("static/images", "ic-logo.png")
-    
+
     app.config.from_mapping(SECRET_KEY="dev")
 
     if test_config is None:
@@ -207,12 +213,12 @@ def create_app(test_config=None):
 
     # register blueprint for the /pid route
     from . import (
+        preauthorization,
+        route_dynamic,
         route_eidasnode,
         route_formatter,
-        route_oidc,
-        route_dynamic,
         route_oid4vp,
-        preauthorization,
+        route_oidc,
     )
     from .test_cases import lt as lt_testcases
 
@@ -232,7 +238,8 @@ def create_app(test_config=None):
     app.config.update(SESSION_COOKIE_SAMESITE="None", SESSION_COOKIE_SECURE=True)
     Session(app)
 
-    # CORS is a mechanism implemented by browsers to block requests from domains other than the server's one.
+    # CORS is a mechanism implemented by browsers to block requests
+    # from domains other than the server's one.
     CORS(app, supports_credentials=True)
 
     cfgserv.app_logger.info(" - DEBUG - FLASK started")

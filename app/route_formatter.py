@@ -22,6 +22,7 @@ Its main goal is to issue the PID and MDL in cbor/mdoc (ISO 18013-5 mdoc) and SD
 
 This route_formatter.py file is the blueprint for the route /formatter of the PID Issuer Web service.
 """
+
 from typing import Any
 from flask import (
     Blueprint,

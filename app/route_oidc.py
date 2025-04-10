@@ -22,6 +22,7 @@ Its main goal is to issue the PID and MDL in cbor/mdoc (ISO 18013-5 mdoc) and SD
 
 This route_oidc.py file is the blueprint for the route /oidc of the PID Issuer Web service.
 """
+
 import base64
 import hashlib
 import io
@@ -93,6 +94,7 @@ from app.data_management import (
 
 oidc = Blueprint("oidc", __name__, url_prefix="/")
 CORS(oidc)  # enable CORS on the blue print
+
 
 def _add_cookie(resp: Response, cookie_spec: dict):
     kwargs = {k: v for k, v in cookie_spec.items() if k not in ("name",)}
@@ -200,7 +202,7 @@ def verify(authn_method):
 
     if isinstance(args, ResponseMessage) and "error" in args:
         logger.error(
-            {"message": f"Authorization error: {args["error"]}", "args": args.to_json()}
+            {"message": f"Authorization error: {args['error']}", "args": args.to_json()}
         )
         return make_response(args.to_json(), 400)
 
@@ -219,7 +221,6 @@ def verify(authn_method):
     )
 
     if "state" in args["response_args"]:
-
         logText = logText + ", State: " + args["response_args"]["state"]
 
     logger.info(logText)
@@ -466,7 +467,7 @@ def authorizationV3():
         logger.error("Authorization request_uri not found")
         return make_response("Authorization error", 400)
 
-    if not request_uri in parRequests:  # unknow request_uri => return error
+    if request_uri not in parRequests:  # unknow request_uri => return error
         # needs to be changed to an appropriate error message, and need to be logged
         # return service_endpoint(oidc_server().get_endpoint("authorization"))
         logger.error("Authorization request_uri not found in parRequests")
@@ -552,7 +553,6 @@ def authorizationV3():
 
 @oidc.route("/pid_authorization")
 def pid_authorization_get():
-
     presentation_id = request.args.get("presentation_id")
 
     url = (
@@ -651,7 +651,6 @@ def auth_choice():
 
 @oidc.route("/token_service", methods=["POST"])
 def token_service():
-
     # session_id = request.cookies.get("session")
 
     response = service_endpoint(oidc_server().get_endpoint("token"))
@@ -673,7 +672,6 @@ def token():
         }
     )
     if req_args["grant_type"] == "authorization_code":
-
         session_id = getSessionId_authCode(req_args["code"])
 
         logger.info(
@@ -709,7 +707,6 @@ def token():
     elif (
         req_args["grant_type"] == "urn:ietf:params:oauth:grant-type:pre-authorized_code"
     ):
-
         if "pre-authorized_code" not in req_args:
             return make_response("invalid_request", 400)
 
@@ -1188,13 +1185,12 @@ def load_test():
 
 @oidc.route("/credential_offer", methods=["GET", "POST"])
 def credentialOffer():
-
     credentialsSupported = oidc_metadata["credential_configurations_supported"]
     auth_choice = request.form.get("Authorization Code Grant")
     form_keys = request.form.keys()
     credential_offer_URI = request.form.get("credential_offer_URI")
 
-    if not "proceed" in form_keys:
+    if "proceed" not in form_keys:
         return redirect(
             urllib.parse.urljoin(cfgservice.service_url, "credential_offer_choice")
         )

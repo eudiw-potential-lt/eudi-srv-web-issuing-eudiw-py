@@ -22,6 +22,7 @@ Its main goal is to issue the PID and MDL in cbor/mdoc (ISO 18013-5 mdoc) and SD
 
 This lighttoken.py file contains the eIDAS-node lightToken auxiliary functions.
 """
+
 from typing import Any
 from pyignite import Client
 import requests

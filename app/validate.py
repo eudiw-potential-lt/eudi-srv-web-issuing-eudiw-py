@@ -25,49 +25,20 @@ This validate.py file includes different validation functions.
 
 import base64
 import datetime
-from flask import session
-import validators
-
-from typing import List
-from werkzeug import datastructures
-from cryptography import x509
-from cryptography.hazmat.backends import default_backend
-from cryptography.hazmat.primitives import serialization
-from cryptography.hazmat.primitives.asymmetric import ec
-from flask_api import status
 from urllib.parse import urlparse
 
-from redirect_func import redirect_getpid_or_mdl
-from app_config.config_service import ConfService as cfgserv
+import validators
 from app_config.config_countries import ConfCountries as cfgcountries
-
+from app_config.config_service import ConfService as cfgserv
+from cryptography import x509
+from cryptography.hazmat.primitives import serialization
+from cryptography.hazmat.primitives.asymmetric import ec
+from flask import session
+from flask_api import status
+from redirect_func import redirect_getpid_or_mdl
 
 # Log
 # from app_config.config_service import ConfService as log
-
-
-def validate_mandatory_args(
-    args: datastructures.ImmutableMultiDict[str, str], mandlist: List[str]
-):
-    """Validate mandatory query arguments.
-    Verify if all the members of mandlist have a value in args
-
-    Keyword arguments:
-    + args -- list of query arguments
-    + mandlist -- list of strings that need to have a value in args
-
-    Return: Return tuple (bool, List[str]).
-    + If all the mandlist elements have a value in args, return (true, []).
-    + If there are mandlist elements that have not a value in args, return (false, l), where l is the list of all mandlist elements that have no value in args.
-    """
-    l = []
-    b = True
-
-    for m in mandlist:
-        if args.get(m) is None:
-            b = False
-            l.append(m)
-    return (b, l)
 
 
 def validate_mandatory_args(args: dict[str, str] | None, mandlist: list[str]):
@@ -208,7 +179,7 @@ def validate_params_getpid_or_mdl(args, list):
         )
     # if country not supported
     if (
-        not "country" in l
+        "country" not in l
         and args.get("country") not in cfgcountries.supported_countries.keys()
     ):
         cfgserv.app_logger.warning(
@@ -279,7 +250,7 @@ def validate_params_getpid_or_mdl(args, list):
                 )
             ],
         )
-    if not "device_publickey" in l:
+    if "device_publickey" not in l:
         device_pub = base64.urlsafe_b64decode(
             args.get("device_publickey").encode("utf-8")
         )
@@ -346,7 +317,7 @@ def is_valid_pem_public_key(pem_key):
         # Attempts to load the public key in PEM format
         public_key = serialization.load_pem_public_key(pem_key, backend=None)
         return True
-    except Exception as e:
+    except Exception:
         return False
 
 

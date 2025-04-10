@@ -22,6 +22,7 @@ Its main goal is to issue the PID and MDL in cbor/mdoc (ISO 18013-5 mdoc) and SD
 
 This formatter_func.py file contains formatter related auxiliary functions.
 """
+
 import base64
 from typing import Any
 import cbor2
@@ -383,7 +384,6 @@ def DATA_sd_jwt(PID):
                 data = {SDObj(value=r): PID[i]}
                 Data.update(data)
         else:
-
             data = {SDObj(value=i): PID[i]}
             Data.update(data)
 

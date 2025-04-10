@@ -19,6 +19,7 @@
 This manages necessary data and it's removal
 
 """
+
 import json
 import threading
 from datetime import datetime
@@ -40,7 +41,6 @@ session_ids: dict[str, dict[str, Any]] = {}
 def getSessionId_requestUri(target_request_uri: str | None):
     matching_session_id = None
     for session_id, session_data in session_ids.items():
-
         if (
             "request_uri" in session_data
             and session_data["request_uri"] == target_request_uri
@@ -109,7 +109,6 @@ def clear_par():
             ) """
 
     for req in deferredRequests.copy():
-
         if datetime.now() > deferredRequests[req]["expires"]:
             deferredRequests.pop(req)
         else:

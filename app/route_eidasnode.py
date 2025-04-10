@@ -16,26 +16,22 @@
 #
 ###############################################################################
 """
-The PID Issuer Web service is a component of the PID Provider backend. 
+ElliptThe PID Issuer Web service is a component of the PID Provider backend.
 Its main goal is to issue the PID and MDL in cbor/mdoc (ISO 18013-5 mdoc) and SD-JWT format.
 
 
 This route_eidasnode.py file is the blueprint for the route /eidasnode of the PID Issuer Web service.
 """
-import base64
+
 import json
-import logging
 from urllib.parse import urljoin
 
 from flask import (
     Blueprint,
-    flash,
-    g,
     redirect,
     render_template,
     request,
     session,
-    url_for,
 )
 from flask_cors import CORS
 
@@ -126,14 +122,13 @@ def getlightresponse():
 
     form_keys = request.form.keys()
     # if token does not exist
-    if not "token" in form_keys:
+    if "token" not in form_keys:
         return redirect_getpid_or_mdl(session["version"], session["returnURL"], 302, [])
 
     user_id = request.form.get("token")
 
     (b, e) = handle_response(user_id)
     if not b:  # if error in getting the attributes
-
         if "tries" not in session:
             session["tries"] = 3
 

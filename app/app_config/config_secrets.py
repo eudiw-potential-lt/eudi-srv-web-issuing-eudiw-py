@@ -19,6 +19,7 @@
 """
 Configuration of service secrets
 """
+
 import os
 
 flask_secret_key = os.getenv("FLASK_SECRET", "secret_here")

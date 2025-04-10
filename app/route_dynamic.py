@@ -22,6 +22,7 @@ Its main goal is to issue the credentials in cbor/mdoc (ISO 18013-5 mdoc) and SD
 
 This route_dynamic.py file is the blueprint for the route /dynamic of the PID Issuer Web service.
 """
+
 from datetime import datetime
 from datetime import date
 from datetime import timedelta
@@ -37,7 +38,7 @@ from flask_cors import CORS
 import requests
 from app.lighttoken import handle_response
 from urllib.parse import urljoin
-#from app.test_cases.helper import *
+# from app.test_cases.helper import *
 
 from validate import (
     validate_mandatory_args,
@@ -277,7 +278,6 @@ def dynamic_R1(country: str):
         return redirect(url)
 
     elif country_config["connection_type"] == "openid":
-
         country_data = country_config["oidc_auth"]
 
         metadata_url = urljoin(
@@ -327,7 +327,6 @@ def red():
     country_config = cfgcountries.supported_countries[session["country"]]
 
     if session["country"] == "PT":
-
         if not request.args:  # if args is empty
             return render_template("/dynamic/pt_url.html")
 
@@ -576,7 +575,6 @@ def red():
     presentation_data: dict[str, Any] = {}
 
     for credential_requested in session["credentials_requested"]:
-
         scope = credentialsSupported[credential_requested]["scope"]
 
         """ if scope in cfgserv.common_name:
@@ -677,9 +675,11 @@ def dynamic_R2():
 
     json_request: dict[str, Any] | None = request.json
 
-    (v, l) = validate_mandatory_args(json_request, ["user_id", "credential_requests"])
+    (valid, _) = validate_mandatory_args(
+        json_request, ["user_id", "credential_requests"]
+    )
 
-    if not v or not json_request:
+    if not valid or not json_request:
         return jsonify(
             {
                 "error": "invalid_credential_request",
@@ -865,7 +865,6 @@ def credentialCreation(
 
     credential_response = {"credential_responses": []}
     for credential in credential_request:
-
         if "credential_identifier" in credential:
             doctype = credentials_supported[credential["credential_identifier"]][
                 "scope"
@@ -875,11 +874,11 @@ def credentialCreation(
             ]
         elif "vct" in credential and "format" in credential:
             doctype = vct2scope(credential["vct"])
-            format = credential["format"]
+            format: str = credential["format"]
 
         elif "format" in credential and "doctype" in credential:
-            format = credential["format"]
-            doctype = credential["doctype"]
+            format: str = credential["format"]
+            doctype: str = credential["doctype"]
 
         else:
             return {
@@ -906,7 +905,6 @@ def credentialCreation(
 
         elif country_config["connection_type"] == "oauth":
             if country == "PT":
-
                 portuguese_fields = country_config["oidc_auth"]["scope"][doctype]
 
                 for fields_pt in portuguese_fields:
@@ -926,7 +924,6 @@ def credentialCreation(
                     ).decode("utf-8")
 
             else:
-
                 for attribute in data:
                     form_data[attribute] = data[attribute]
 
@@ -935,7 +932,9 @@ def credentialCreation(
                 portuguese_fields = country_config["oidc"]["scope"][doctype]
 
                 for fields_pt in portuguese_fields:
-                    for item in data:
+                    for item in data.values():
+                        if not isinstance(item, dict):
+                            break
                         if item["name"] == portuguese_fields[fields_pt]:
                             form_data[fields_pt] = item["value"]
                             break
@@ -949,7 +948,6 @@ def credentialCreation(
                 ).decode("utf-8")
 
             else:
-
                 for attribute in data:
                     form_data[attribute] = data[attribute]
 
@@ -967,7 +965,9 @@ def credentialCreation(
         if "issuing_country" not in form_data:
             form_data.update(
                 {
-                    "issuing_country": session["country"],
+                    "issuing_country": country_config[session["country"]][
+                        "un_distinguishing_sign"
+                    ]
                 }
             )
 
@@ -995,7 +995,6 @@ def credentialCreation(
 
 @dynamic.route("/auth_method", methods=["GET", "POST"])
 def auth():
-
     authorization_params = session["authorization_params"]
     if "Cancelled" in request.form.keys():  # Form request Cancelled
         return authentication_error_redirect(
@@ -1056,7 +1055,6 @@ def Dynamic_form():
     cleaned_data = {}
     country_config = cfgcountries.supported_countries[session["country"]]
     for item in form_data:
-
         if item == "portrait":
             if form_data[item] == "Port1":
                 cleaned_data["portrait"] = cfgserv.portrait1
@@ -1136,7 +1134,6 @@ def Dynamic_form():
     presentation_data = dict()
 
     for credential_requested in session["credentials_requested"]:
-
         scope = credentialsSupported[credential_requested]["scope"]
 
         """ if scope in cfgserv.common_name:
@@ -1155,7 +1152,6 @@ def Dynamic_form():
         attributesForm2 = getAttributesForm2(credential_atributes_form).keys()
 
         for attribute in cleaned_data.keys():
-
             if attribute in attributesForm:
                 presentation_data[credential][attribute] = cleaned_data[attribute]
 
@@ -1175,7 +1171,13 @@ def Dynamic_form():
         )
 
         if not cleaned_data.get("issuing_country"):
-            presentation_data[credential].update({"issuing_country": country_config[session["country"]]["un_distinguishing_sign"]})
+            presentation_data[credential].update(
+                {
+                    "issuing_country": country_config[session["country"]][
+                        "un_distinguishing_sign"
+                    ]
+                }
+            )
 
         presentation_data[credential].update(
             {"issuing_authority": doctype_config["issuing_authority"]}
@@ -1248,7 +1250,6 @@ def Dynamic_form():
 
 @dynamic.route("/redirect_wallet", methods=["GET", "POST"])
 def redirect_wallet():
-
     form_data = request.form.to_dict()
 
     user_id = form_data["user_id"]

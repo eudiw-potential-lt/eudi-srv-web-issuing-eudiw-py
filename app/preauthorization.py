@@ -25,7 +25,12 @@ import base64
 import io
 import json
 import random
-from PIL import Image
+import urllib.parse
+from datetime import date, datetime, timedelta
+from urllib.parse import urljoin, urlparse
+
+import requests
+import segno
 from flask import (
     Blueprint,
     make_response,
@@ -34,15 +39,18 @@ from flask import (
     session,
 )
 from flask_cors import CORS
-import requests
-import urllib.parse
-from datetime import date, datetime, timedelta
-from urllib.parse import urljoin, urlparse
+from idpyoidc.message.oauth2 import ResponseMessage
+from idpyoidc.message.oidc import AuthorizationRequest
+from idpyoidc.server.oidc.authorization import Authorization
+from PIL import Image
 
-import segno
-
-from app.route_oidc import service_endpoint
-from .app_config.config_service import ConfService as cfgservice
+from app.data_management import (
+    form_dynamic_data,
+    getSessionId_requestUri,
+    parRequests,
+    session_ids,
+    transaction_codes,
+)
 from app.misc import (
     authentication_error_redirect,
     calculate_age,
@@ -52,19 +60,10 @@ from app.misc import (
     oidc_server,
     validate_image,
 )
+from app.route_oidc import service_endpoint
 
-from app.data_management import (
-    parRequests,
-    transaction_codes,
-    getSessionId_requestUri,
-    session_ids,
-)
-from app.data_management import form_dynamic_data
 from . import oidc_metadata
-
-from idpyoidc.message.oidc import AuthorizationRequest
-from idpyoidc.message.oauth2 import ResponseMessage
-
+from .app_config.config_service import ConfService as cfgservice
 
 preauth = Blueprint("preauth", __name__, url_prefix="/")
 CORS(preauth)  # enable CORS on the blue print
@@ -72,7 +71,6 @@ CORS(preauth)  # enable CORS on the blue print
 
 @preauth.route("/preauth", methods=["GET"])
 def preauthRed():
-
     credentials_id = request.args.get("credentials_id")
     credential_list = json.loads(credentials_id)
 
@@ -117,7 +115,6 @@ def preauth_form():
     form_data.pop("proceed")
     cleaned_data = {}
     for item in form_data:
-
         if item == "portrait":
             if form_data[item] == "Port1":
                 cleaned_data["portrait"] = cfgservice.portrait1
@@ -183,7 +180,6 @@ def preauth_form():
     presentation_data = dict()
 
     for credential_requested in session["credentials_requested"]:
-
         scope = credentialsSupported[credential_requested]["scope"]
 
         """ if scope in cfgservice.common_name:
@@ -202,7 +198,6 @@ def preauth_form():
         attributesForm2 = getAttributesForm2(credential_atributes_form).keys()
 
         for attribute in cleaned_data.keys():
-
             if attribute in attributesForm:
                 presentation_data[credential][attribute] = cleaned_data[attribute]
 
@@ -292,7 +287,6 @@ def preauth_form():
 
 @preauth.route("/form_authorize_generate", methods=["GET", "POST"])
 def form_authorize_generate():
-
     form_data = request.form.to_dict()
 
     user_id = form_data["user_id"]
@@ -302,7 +296,6 @@ def form_authorize_generate():
 
 
 def generate_offer(data):
-
     pre_auth_code = generate_preauth_token(
         data=data, authorization_details=session["authorization_details"]
     )
@@ -375,7 +368,6 @@ def generate_offer(data):
 
 @preauth.route("/credentialOfferReq2", methods=["POST"])
 def credentialOfferReq2():
-
     json_token = request.form.get("request")
 
     header, payload, signature = json_token.split(".")
@@ -442,7 +434,7 @@ def credentialOfferReq2():
     json_string = json.dumps(credential_offer)
 
     uri = (
-        f"openid-credential-offer://credential_offer?credential_offer="
+        "openid-credential-offer://credential_offer?credential_offer="
         + urllib.parse.quote(json_string, safe=":/")
     )
 
@@ -487,13 +479,13 @@ def generate_preauth_token(data, authorization_details):
 
     request_uri = par_response["request_uri"]
 
-    if not request_uri in parRequests:  # unknow request_uri => return error
+    if request_uri not in parRequests:  # unknow request_uri => return error
         # needs to be changed to an appropriate error message, and need to be logged
         return service_endpoint(oidc_server().get_endpoint("authorization"))
 
     session_id = getSessionId_requestUri(request_uri)
 
-    if session_id == None:
+    if session_id is None:
         cfgservice.app_logger.error("Authorization request_uri not found.")
         return make_response("Request_uri not found", 400)
 
@@ -555,7 +547,7 @@ def generate_preauth_token(data, authorization_details):
 
     authz_request = AuthorizationRequest().from_urlencoded(auth_args["query"])
 
-    endpoint = oidc_server().get_endpoint("authorization")
+    endpoint = cast(Authorization, oidc_server().get_endpoint("authorization"))
 
     _session_id = endpoint.create_session(
         authz_request,
@@ -581,7 +573,6 @@ def generate_preauth_token(data, authorization_details):
     )
 
     if "state" in args["response_args"]:
-
         logText = logText + ", State: " + args["response_args"]["state"]
 
     cfgservice.app_logger.info(logText)

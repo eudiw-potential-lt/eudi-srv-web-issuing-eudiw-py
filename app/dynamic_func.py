@@ -29,12 +29,10 @@ from misc import (
     getOptionalAttributes,
 )
 from redirect_func import json_post
-from app_config.config_service import ConfService as cfgserv
 from app import oidc_metadata
 
 
 def dynamic_formatter(format, doctype, form_data, device_publickey, country_config):
-
     if doctype == "org.iso.18013.5.1.mDL":
         un_distinguishing_sign = country_config["un_distinguishing_sign"]
     else:

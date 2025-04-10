@@ -19,18 +19,16 @@
 This validate_vp_token.py file contains functions related to validate VP Token.
 
 """
+
 import re
-import cryptography
 from pycose.messages import Sign1Message
 from pycose.headers import X5chain
 import base64
-from pycose.messages import Sign1Message
 import cbor2
 from pycose.keys import EC2Key
 
 from cryptography.hazmat.backends import default_backend
-from cryptography.hazmat.primitives import serialization
-from cryptography.hazmat.primitives.asymmetric import padding, ec
+from cryptography.hazmat.primitives.asymmetric import ec
 from cryptography import x509
 import datetime
 import hashlib
@@ -56,27 +54,22 @@ def validate_vp_token(response_json, credentials_requested):
         ],
     }
 
-    
-
     if (
         response_json["presentation_submission"]["definition_id"]
         != auth_request_values["definition_id"]
     ):
-
         return True, "Definition id received is different from the requested."
 
     elif (
         response_json["presentation_submission"]["descriptor_map"][0]["id"]
         != auth_request_values["id"]
     ):
-
         return (
             True,
             "Id from descriptor is not same as the id in the authorization request.",
         )
 
     elif response_json["presentation_submission"]["descriptor_map"][0]["path"] == "$":
-
         pos = 0
 
     else:
@@ -90,11 +83,9 @@ def validate_vp_token(response_json, credentials_requested):
             pos = -1
 
     if pos == -1:
-
         return True, "The path value from presentation_submission is not valid."
 
     else:
-
         mdoc = response_json["vp_token"][0]
         mdoc_ver = None
 
@@ -107,13 +98,11 @@ def validate_vp_token(response_json, credentials_requested):
         mdoc_cbor = cbor2.decoder.loads(mdoc_ver)
 
         if mdoc_cbor["status"] != 0:
-
             return True, "Status invalid:" + str(mdoc_cbor["status"])
 
         error, errorMsg = validate_certificate(mdoc_cbor["documents"][pos])
 
         if error == False:
-
             return True, errorMsg
 
         # Validate values received are the same values requested
@@ -126,8 +115,8 @@ def validate_vp_token(response_json, credentials_requested):
                 for namespace in cfgservice.dynamic_issuing[id][doctype]:
                     for attribute in cfgservice.dynamic_issuing[id][doctype][namespace]:
                         attributes_requested.append(attribute)
-        
-        #attributes_requested = auth_request_values["input_descriptor"]
+
+        # attributes_requested = auth_request_values["input_descriptor"]
         attributes_received = []
 
         for n in namespaces.keys():
@@ -137,9 +126,7 @@ def validate_vp_token(response_json, credentials_requested):
                 attributes_received.append(id)
 
         if len(attributes_received) != len(attributes_requested):
-
             if set(attributes_received).issubset(set(attributes_requested)):
-
                 # missing_attributes = list(set(attributes_requested) - set(attributes_received))
                 return True, "Missing attributes"  # missing_attributes
             else:
@@ -148,7 +135,6 @@ def validate_vp_token(response_json, credentials_requested):
         if all(x in attributes_requested for x in attributes_received) and all(
             x in attributes_received for x in attributes_requested
         ):
-
             return False, ""
 
 
@@ -175,11 +161,9 @@ def validate_certificate(mdoc):
 
     # Validate Certificate (MSO Header)
     if certificate.issuer not in trusted_CAs:
-
         return False, "Certificate wasn't emitted by a Trusted CA "
 
     else:
-
         public_key_CA = trusted_CAs[certificate.issuer]["public_key"]
 
         x = (
@@ -224,13 +208,12 @@ def validate_certificate(mdoc):
         now = datetime.datetime.now(datetime.timezone.utc)
 
         if now < not_valid_before or not_valid_after < now:
-
             return False, "Certificate not valid"
 
         try:
             message.verify_signature()
 
-        except Exception as e:
+        except Exception:
             return False, "Signature not valid"
 
     # Validate payload
@@ -258,7 +241,6 @@ def validate_certificate(mdoc):
                 calculated_digest = hashlib.sha512(cbor2.dumps(new_cbor_tag)).digest()
 
             for digests in payload_decoded["valueDigests"][n].values():
-
                 if calculated_digest == digests:
                     i += 1
                     break
@@ -282,7 +264,6 @@ def validate_certificate(mdoc):
     now = datetime.datetime.now(datetime.timezone.utc)
 
     if now < validFrom or validUntil < now:
-
         return False, "Period defined in ValidityInfo is invalid"
 
     return True, ""

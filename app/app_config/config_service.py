@@ -16,10 +16,10 @@
 #
 ###############################################################################
 """
-The PID Issuer Web service is a component of the PID Provider backend. 
+The PID Issuer Web service is a component of the PID Provider backend.
 Its main goal is to issue the PID in cbor/mdoc (ISO 18013-5 mdoc) and SD-JWT format.
 
-This config_service.py contains configuration data for the PID Issuer Web service. 
+This config_service.py contains configuration data for the PID Issuer Web service.
 
 NOTE: You should only change it if you understand what you're doing.
 """
@@ -534,6 +534,7 @@ class ConfService:
 
     if os.getenv("USE_GCP_LOGGER") == "1":
         from adapters.out.logging.google_cloud import init, get_logger
+
         init()
         app_logger = get_logger("app")
     elif os.getenv("USE_FILE_LOGGER") == "1":

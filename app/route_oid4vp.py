@@ -27,7 +27,7 @@ import io
 import json
 from urllib.parse import urlparse, urljoin
 from uuid import uuid4
-from flask import Blueprint, Flask, jsonify, render_template, request, session
+from flask import Blueprint, jsonify, render_template, request, session
 from flask_cors import CORS
 import requests
 import segno
@@ -52,7 +52,6 @@ from app.data_management import oid4vp_requests, form_dynamic_data
 
 @oid4vp.route("/oid4vp", methods=["GET"])
 def openid4vp():
-
     if "session_id" in session:
         cfgservice.app_logger.info(
             ", Session ID: "
@@ -207,7 +206,6 @@ def openid4vp():
 
 @oid4vp.route("/getpidoid4vp", methods=["GET"])
 def getpidoid4vp():
-
     if "response_code" in request.args and "session_id" in request.args:
         cfgservice.app_logger.info(
             ", Session ID: " + session["session_id"] + ", " + "oid4vp flow: same_device"
@@ -388,4 +386,3 @@ def getpidoid4vp():
             optional_attributes=attributesForm2,
             redirect_url=urljoin(cfgservice.service_url, "dynamic/form"),
         )
-

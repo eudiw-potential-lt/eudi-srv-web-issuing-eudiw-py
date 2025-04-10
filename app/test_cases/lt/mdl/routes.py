@@ -4,7 +4,7 @@ Test cases for Lithuanian mDL issuer interop tests.
 
 from datetime import datetime, date, timedelta
 from flask_cors import CORS
-from flask import Blueprint, Flask, redirect, render_template, request, session
+from flask import Blueprint, Flask, render_template, request, session
 from flask_api import status
 from pathlib import Path
 from urllib.parse import urljoin
@@ -119,7 +119,7 @@ def mdl_test_case_form():
     )
     mdl_data["mDL"].update({"un_distinguishing_sign": "LT"})
 
-    user_id = f"{session["country"]}.{user_id}"
+    user_id = f"{session['country']}.{user_id}"
 
     logger.info(
         {

@@ -16,15 +16,16 @@
 #
 ###############################################################################
 """
-The PID Issuer Web service is a component of the PID Provider backend. 
+The PID Issuer Web service is a component of the PID Provider backend.
 Its main goal is to issue the PID and MDL in cbor/mdoc (ISO 18013-5 mdoc) and SD-JWT format.
 
 
 This redirect_func.py file manages the redirection of the flow.
 """
+
 import requests
 import urllib.parse
-from flask import redirect, session
+from flask import redirect
 
 from app_config.config_service import ConfService as cfgserv
 

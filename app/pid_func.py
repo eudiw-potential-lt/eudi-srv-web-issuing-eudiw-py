@@ -22,6 +22,7 @@ Its main goal is to issue the PID and MDL in cbor/mdoc (ISO 18013-5 mdoc) and SD
 
 This pid_func.py file contains PID related auxiliary functions.
 """
+
 import datetime
 from typing import Any
 from app_config.config_service import ConfService as cfgserv

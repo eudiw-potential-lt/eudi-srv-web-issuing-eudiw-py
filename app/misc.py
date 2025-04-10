@@ -22,18 +22,21 @@ Its main goal is to issue the PID and MDL in cbor/mdoc (ISO 18013-5 mdoc) and SD
 
 This misc.py file includes different miscellaneous functions.
 """
-import datetime
 
-from io import BytesIO
+import datetime
+import json
 import secrets
-from PIL import Image
-from app import oidc_metadata
+import uuid
+from io import BytesIO
+
 from flask import current_app, redirect
 from flask.helpers import make_response
-from redirect_func import url_get
-import json
-import uuid
+from google.api_core.exceptions import InvalidArgument
 from idpyoidc.server import Server
+from PIL import Image
+from redirect_func import url_get
+
+from app import oidc_metadata
 
 
 def oidc_server() -> Server:
@@ -98,7 +101,7 @@ def getMandatoryAttributes(attributes):
 
     attributes_form = []
     for attribute in attributes:
-        if attributes[attribute]["mandatory"] == True:
+        if attributes[attribute]["mandatory"] is True:
             attributes_form.append(attribute)
 
     """ attributes_form = {}
@@ -129,7 +132,6 @@ def getAttributesForm(credentials_requested):
         namescapes = credentialsSupported[request]["claims"]
         attributes_req = {}
         if format == "mso_mdoc":
-
             for namescape in namescapes:
                 attributes_req = getMandatoryAttributes(
                     credentialsSupported[request]["claims"][namescape]
@@ -150,24 +152,6 @@ def getAttributesForm(credentials_requested):
     return attributes
 
 
-def getMandatoryAttributes(attributes):
-    """
-    Function to get mandatory attributes from credential
-    """
-
-    attributes_form = {}
-
-    for x, value in enumerate(list(attributes.keys())):
-        attribute_name = list(attributes.keys())[x]
-        attribute_data = attributes.get(attribute_name, {})
-
-        if attribute_data["mandatory"] == True:
-            if "value_type" in attribute_data:
-                attributes_form.update({attribute_name: attribute_data["value_type"]})
-
-    return attributes_form
-
-
 def getAttributesForm2(credentials_requested):
     """
     Function to get attributes needed to populate form depending credentials requested by user
@@ -184,7 +168,6 @@ def getAttributesForm2(credentials_requested):
         namescapes = credentialsSupported[request]["claims"]
         attributes_req = {}
         if format == "mso_mdoc":
-
             for namescape in namescapes:
                 attributes_req = getOptionalAttributes(
                     credentialsSupported[request]["claims"][namescape]
@@ -216,7 +199,7 @@ def getOptionalAttributes(attributes):
         attribute_name = list(attributes.keys())[x]
         attribute_data = attributes.get(attribute_name, {})
 
-        if attribute_data["mandatory"] == False:
+        if attribute_data["mandatory"] is False:
             if "value_type" in attribute_data:
                 attributes_form.update({attribute_name: attribute_data["value_type"]})
 
@@ -265,24 +248,19 @@ def validate_image(file):
     return True, None
 
 
-def vct2scope(vct: str):
+def vct2scope(vct: str) -> str:
     credentialsSupported = oidc_metadata["credential_configurations_supported"]
-    for credential in credentialsSupported:
-        if (
-            "vct" in credentialsSupported[credential]
-            and credentialsSupported[credential]["vct"] == vct
-        ):
-            return credentialsSupported[credential]["scope"]
+    for credential in credentialsSupported.values():
+        if "vct" in credential and credential["vct"] == vct:
+            return credential["scope"]
+    raise InvalidArgument(f"No configuration for vct credentials '{vct}")
 
 
 def doctype2vct(doctype: str):
     credentialsSupported = oidc_metadata["credential_configurations_supported"]
-    for credential in credentialsSupported:
-        if (
-            "vct" in credentialsSupported[credential]
-            and credentialsSupported[credential]["scope"] == doctype
-        ):
-            return credentialsSupported[credential]["vct"]
+    for credential in credentialsSupported.values():
+        if "vct" in credential and credential["scope"] == doctype:
+            return credential["vct"]
 
 
 # Generates authorization details from a scope
@@ -347,7 +325,6 @@ def authentication_error_redirect(jws_token, error, error_description):
 
 # Error redirection to the wallet during authentication without jws_token
 def auth_error_redirect(return_uri, error, error_description=None):
-
     error_msg = {
         "error": error,
     }
