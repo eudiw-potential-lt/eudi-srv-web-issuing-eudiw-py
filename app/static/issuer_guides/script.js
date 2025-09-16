@@ -25,8 +25,4 @@ function previousSlide() {
     showSlide(currentSlide);
 }
 
-function goHome() {
-    window.location.href = window.location.origin;
-}
-
 showSlide(currentSlide);

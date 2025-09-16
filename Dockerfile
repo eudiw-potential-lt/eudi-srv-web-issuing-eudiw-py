@@ -12,22 +12,12 @@ WORKDIR /
 RUN python3 -m venv venv \ 
     && /venv/bin/pip install \
     --no-cache-dir -r requirements.txt
-    # \
-    #-I git+https://github.com/wbond/oscrypto.git
+# \
+#-I git+https://github.com/wbond/oscrypto.git
 
 FROM python:3.12
 
-RUN mkdir -p /tmp/log_dev \
-    && chmod -R 755 /tmp/log_dev \
-    && mkdir -p /etc/eudiw/pid-issuer/cert \
-    && mkdir -p /etc/eudiw/pid-issuer/privkey
-
-COPY --from=build /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/ca-certificates.crt
-COPY --from=build /venv /venv
-COPY ./app /app
-
-WORKDIR /app
-
+ENV BUILD_TAG 2025-09-17-01
 ENV PORT=5000
 ENV HOST=0.0.0.0
 ENV EIDAS_NODE_URL="https://preprod.issuer.eudiw.dev/EidasNode/"
@@ -55,6 +45,17 @@ VOLUME /app/secrets/cert.key
 VOLUME /etc/eudiw/pid-issuer/privKey
 VOLUME /etc/eudiw/pid-issuer/cert
 VOLUME /tmp/log_dev
+
+WORKDIR /app
+
+RUN mkdir -p /tmp/log_dev \
+    && chmod -R 755 /tmp/log_dev \
+    && mkdir -p /etc/eudiw/pid-issuer/cert \
+    && mkdir -p /etc/eudiw/pid-issuer/privkey
+
+COPY --from=build /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/ca-certificates.crt
+COPY --from=build /venv /venv
+COPY ./app /app
 
 #ENV FLASK_APP=app \
 #    FLASK_RUN_PORT=$PORT\

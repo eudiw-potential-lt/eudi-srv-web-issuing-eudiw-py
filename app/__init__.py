@@ -29,6 +29,8 @@ import sys
 
 sys.path.append(os.path.dirname(__file__))
 
+from time import strftime
+import traceback
 from urllib.parse import urlparse
 
 from app_config.config_service import ConfService as cfgserv
@@ -36,7 +38,7 @@ from app_config.oid_config import build_oid_config
 from cryptography import x509
 from cryptography.hazmat.backends import default_backend
 from cryptography.hazmat.primitives.asymmetric import ec
-from flask import Flask, render_template, send_from_directory
+from flask import Flask, jsonify, render_template, send_from_directory, request
 from flask_cors import CORS
 from flask_session import Session
 from idpyoidc.configure import Configuration
@@ -46,6 +48,7 @@ from pycose.keys import EC2Key
 
 # from werkzeug.debug import *
 from werkzeug.exceptions import HTTPException
+from werkzeug.middleware.proxy_fix import ProxyFix
 
 # Log
 from .metadata_config import build_metadata
@@ -141,7 +144,19 @@ def handle_exception(e: Exception):
     # pass through HTTP errors
     if isinstance(e, HTTPException):
         return e
-    cfgserv.app_logger.error("- WARN - Error 500", e)
+
+    tb = traceback.format_exc()
+    timestamp = strftime("[%Y-%b-%d %H:%M]")
+    cfgserv.app_logger.error(
+        "%s %s %s %s %s 5xx INTERNAL SERVER ERROR\n%s",
+        timestamp,
+        request.remote_addr,
+        request.method,
+        request.scheme,
+        request.full_path,
+        tb,
+    )
+
     # now you're handling non-HTTP exceptions only
     return (
         render_template(
@@ -172,13 +187,51 @@ def create_app(test_config=None):
     # create and configure the app
     app = Flask(__name__, instance_relative_config=True)
 
+    app.wsgi_app = ProxyFix(
+        app.wsgi_app, x_for=1, x_proto=1, x_host=1, x_port=1, x_prefix=1
+    )
+
     app.register_error_handler(Exception, handle_exception)
     app.register_error_handler(404, page_not_found)
     log = logging.getLogger("werkzeug")
     log.setLevel(logging.ERROR)
 
+    @app.before_request
+    def log_request_info():
+        timestamp = strftime("[%Y-%b-%d %H:%M]")
+        cfgserv.app_logger.debug(
+            "%s [req] %s %s %s %s %s %s",
+            timestamp,
+            request.remote_addr,
+            request.method,
+            request.scheme,
+            request.full_path,
+            request.headers,
+            request.get_data(),
+        )
+
+    @app.after_request
+    def after_request(response):
+        timestamp = strftime("[%Y-%b-%d %H:%M]")
+        cfgserv.app_logger.debug(
+            "%s [res] %s %s %s %s %s %s",
+            timestamp,
+            request.remote_addr,
+            request.method,
+            request.scheme,
+            request.full_path,
+            response.status,
+            response.headers,
+        )
+        return response
+
+    @app.route("/healthz", methods=["GET"])
+    def health():
+        status = {"status": "ok"}
+        return jsonify(status)
+
     @app.route("/", methods=["GET"])
-    def initial_page():
+    def index():
         return render_template(
             "misc/initial_page.html", oidc=cfgserv.oidc, service_url=cfgserv.service_url
         )
@@ -190,6 +243,10 @@ def create_app(test_config=None):
     @app.route("/ic-logo.png")
     def logo():
         return send_from_directory("static/images", "ic-logo.png")
+
+    @app.route("/issuer_guides/<name>")
+    def issuer_guides(name: str):
+        return render_template(f"issuer_guides/{name}")
 
     app.config.from_mapping(SECRET_KEY="dev")
 

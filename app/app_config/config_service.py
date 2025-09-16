@@ -532,12 +532,12 @@ class ConfService:
     # ------------------------------------------------------------------------------------------------
     # LOGS
 
-    if os.getenv("USE_GCP_LOGGER") == "1":
+    if os.getenv("LOGGING_USE_GCP_LOGGER") == "1":
         from adapters.out.logging.google_cloud import init, get_logger
 
         init()
         app_logger = get_logger("app")
-    elif os.getenv("USE_FILE_LOGGER") == "1":
+    elif os.getenv("LOGGING_USE_FILE_LOGGER") == "1":
         log_dir = "/tmp/log_dev"
         # log_dir = "../../log"
         log_file_info = "logs.log"
@@ -559,9 +559,10 @@ class ConfService:
         app_logger = logging.getLogger("app_logger")
         app_logger.addHandler(log_handler_info)
     else:
+        logging.basicConfig()
         app_logger = logging.getLogger("app_logger")
 
-    app_logger.setLevel(logging.INFO)
+    app_logger.setLevel(os.getenv("LOGGING_LEVEL", "INFO"))
 
     """  logger_error = logging.getLogger("error")
     logger_error.addHandler(log_handler_info)
