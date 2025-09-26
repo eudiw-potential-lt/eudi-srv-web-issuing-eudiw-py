@@ -169,7 +169,16 @@ def handle_exception(e: Exception):
 
 
 def page_not_found(e: Exception):
-    cfgserv.app_logger.exception("- WARN - Error 404", e)
+    timestamp = strftime("[%Y-%b-%d %H:%M]")
+    cfgserv.app_logger.error(
+        "%s %s %s %s %s 404 NOT_FOUND ERROR",
+        timestamp,
+        request.remote_addr,
+        request.method,
+        request.scheme,
+        request.full_path,
+    )
+
     return (
         render_template(
             "misc/500.html",
@@ -198,35 +207,6 @@ def create_app(test_config=None):
     app.register_error_handler(404, page_not_found)
     log = logging.getLogger("werkzeug")
     log.setLevel(logging.ERROR)
-
-    @app.before_request
-    def log_request_info():
-        timestamp = strftime("[%Y-%b-%d %H:%M]")
-        cfgserv.app_logger.debug(
-            "%s [req] %s %s %s %s %s %s",
-            timestamp,
-            request.remote_addr,
-            request.method,
-            request.scheme,
-            request.full_path,
-            request.headers,
-            request.get_data(),
-        )
-
-    @app.after_request
-    def after_request(response):
-        timestamp = strftime("[%Y-%b-%d %H:%M]")
-        cfgserv.app_logger.debug(
-            "%s [res] %s %s %s %s %s %s",
-            timestamp,
-            request.remote_addr,
-            request.method,
-            request.scheme,
-            request.full_path,
-            response.status,
-            response.headers,
-        )
-        return response
 
     @app.route("/healthz", methods=["GET"])
     def health():

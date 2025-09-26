@@ -39,6 +39,11 @@ ENV PID_ORG_ID="Test mDL Issuer"
 ENV MDL_ISSUING_AUTHORITY="Test mDL Issuer"
 ENV QEAA_ISSUING_AUTHORITY="Test QEAA Issuer"
 
+RUN mkdir -p /tmp/log_dev \
+    && chmod -R 755 /tmp/log_dev \
+    && mkdir -p /etc/eudiw/pid-issuer/cert \
+    && mkdir -p /etc/eudiw/pid-issuer/privKey
+
 EXPOSE $PORT
 
 VOLUME /app/secrets/cert.pem
@@ -48,11 +53,6 @@ VOLUME /etc/eudiw/pid-issuer/cert
 VOLUME /tmp/log_dev
 
 WORKDIR /app
-
-RUN mkdir -p /tmp/log_dev \
-    && chmod -R 755 /tmp/log_dev \
-    && mkdir -p /etc/eudiw/pid-issuer/cert \
-    && mkdir -p /etc/eudiw/pid-issuer/privKey
 
 COPY --from=build /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/ca-certificates.crt
 COPY --from=build /.venv /.venv

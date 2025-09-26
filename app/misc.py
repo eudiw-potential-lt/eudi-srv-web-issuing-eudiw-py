@@ -99,10 +99,10 @@ def getMandatoryAttributes(attributes):
     Function to get mandatory attributes from credential
     """
 
-    attributes_form = []
-    for attribute in attributes:
+    attributes_form = {}
+    for attribute, attribute_def in attributes.items():
         if attributes[attribute]["mandatory"] is True:
-            attributes_form.append(attribute)
+            attributes_form.update({attribute: attribute_def})
 
     """ attributes_form = {}
 
@@ -142,9 +142,9 @@ def getAttributesForm(credentials_requested):
                 getMandatoryAttributes(credentialsSupported[request]["claims"])
             )
 
-        for attribute in attributes_req:
+        for attribute, attribute_def in attributes_req.items():
             if attribute not in attributes:
-                attributes.update({attribute: attributes_req[attribute]})
+                attributes.update({attribute: attribute_def})
 
         if "birth_date" in attributes and "birthdate" in attributes:
             attributes.pop("birthdate")
@@ -166,7 +166,7 @@ def getAttributesForm2(credentials_requested):
     for request in credentials_requested:
         format = credentialsSupported[request]["format"]
         namescapes = credentialsSupported[request]["claims"]
-        attributes_req = {}
+        attributes_req = []
         if format == "mso_mdoc":
             for namescape in namescapes:
                 attributes_req = getOptionalAttributes(
