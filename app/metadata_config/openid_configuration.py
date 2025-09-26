@@ -69,7 +69,7 @@ def build_openid_configuration(confsvc: ConfService):
         "backchannel_logout_supported": True,
         "backchannel_logout_session_required": True,
         "code_challenge_methods_supported": ["S256"],
-        "issuer": confsvc.service_url,
+        "issuer": confsvc.service_url.removesuffix("/"),
         "registration_endpoint": urljoin(confsvc.service_url, "registration"),
         "introspection_endpoint": urljoin(confsvc.service_url, "introspection"),
         "authorization_endpoint": urljoin(confsvc.service_url, "authorizationV3"),

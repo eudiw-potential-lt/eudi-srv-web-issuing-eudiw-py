@@ -52,7 +52,7 @@ WORKDIR /app
 RUN mkdir -p /tmp/log_dev \
     && chmod -R 755 /tmp/log_dev \
     && mkdir -p /etc/eudiw/pid-issuer/cert \
-    && mkdir -p /etc/eudiw/pid-issuer/privkey
+    && mkdir -p /etc/eudiw/pid-issuer/privKey
 
 COPY --from=build /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/ca-certificates.crt
 COPY --from=build /.venv /.venv
